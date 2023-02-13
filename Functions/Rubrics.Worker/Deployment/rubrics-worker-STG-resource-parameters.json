@@ -1,0 +1,87 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "subscriptionId": {
+      "value": "0d4d3dc6-887c-40a3-b124-23319295acbf"
+    },
+    "name": {
+      "value": "func-exams-rubrics-worker-stg"
+    },
+    "userAssignedIdentities_id_exams_shared": {
+      "value": "/subscriptions/0d4d3dc6-887c-40a3-b124-23319295acbf/resourceGroups/rg-exams-shared-test/providers/Microsoft.ManagedIdentity/userAssignedIdentities/id-exams-shared-stg"
+    },
+    "location": {
+      "value": "East US 2"
+    },
+    "hostingPlanName": {
+      "value": "plan-exams-shared-stg"
+    },
+    "serverFarmResourceGroup": {
+      "value": "rg-exams-shared-test"
+    },
+    "alwaysOn": {
+      "value": true
+    },
+    "storageAccountName": {
+      "value": "stexamssharedtest-2"
+    },
+    "appInsightInstrumentationKey": {
+      "value": "731f813c-a650-4146-b1f9-b38b0f6c4dac"
+    },
+    "appInsightConnectionString": {
+      "value": "InstrumentationKey=731f813c-a650-4146-b1f9-b38b0f6c4dac;IngestionEndpoint=https://eastus2-3.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus2.livediagnostics.monitor.azure.com/"
+    },
+    "azureWebJobsStorage": {
+      "value": "@Microsoft.KeyVault(SecretUri=https://kv-exams-shared-stg.vault.azure.net/secrets/AzureWebJobsStorage/)"
+    },
+    "azureWebJobsServiceBus": {
+      "value": "@Microsoft.KeyVault(SecretUri=https://kv-exams-shared-stg.vault.azure.net/secrets/AzureWebJobsServiceBus/)"
+    },
+    "environmentName": {
+      "value": "stg"
+    },
+    "endpointName": {
+      "value": "stg-rubrics-worker-core"
+    },
+    "nServicebusLicense": {
+      "value": "<?xml version=\"1.0\" encoding=\"utf-8\"?><license type=\"Commercial\" DeploymentType=\"Royalty-Free\" Quantity=\"9\" Edition=\"Enterprise\" Applications=\"All\" RenewalType=\"Perpetual\" UpgradeProtectionExpiration=\"2023-05-03\" expiration=\"2122-04-18\" id=\"69ef6305-dc3f-4e22-b373-fc6bf861e179\"><name>Association of International CPAs</name><Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315\" /><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\" /><Reference URI=\"\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\" /></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\" /><DigestValue>6vUfv2AHNAaGyLwEwxy2Y0oA7qA=</DigestValue></Reference></SignedInfo><SignatureValue>uFo8yIP5ZyXTDINXCLurWjTAN+1/0CMX1mEEXpiTefwkgoZDqsiqK7oqO63SQ6OJkwb35rFTt2Z5siZmVwUDuaumKp2UyS9w/RyeHyGjih6RrVQvJ/CrLRCqsm4s/ZqWnAgeSLEyaTrlef5grb84OdJuszF2GiEVwsn7eNfMvAk=</SignatureValue></Signature></license>"
+    },
+    "rubricsCertificateBlobContainer": {
+      "value": "ravencertificates"
+    },
+    "rubricsCertificateFileName": {
+      "value": "RubricsAdmin Client Certificate.pfx"
+    },
+    "rubricsCertificatePassword": {
+      "value": "@Microsoft.KeyVault(SecretUri=https://kv-exams-shared-stg.vault.azure.net/secrets/RubricsCertificatePassword/)"
+    },
+    "secureAccess": {
+      "value": true
+    },
+    "databaseUrl": {
+      "value": "https://rstg.examstest.aicpa.org"
+    },
+    "databaseName": {
+      "value": "Rubrics"
+    },
+    "functionExtensionVersion": {
+      "value": "~4"
+    },
+    "functionWorkerRuntime": {
+      "value": "dotnet"
+    },
+    "sendGridApiKey": {
+      "value": "@Microsoft.KeyVault(SecretUri=https://kv-exams-shared-stg.vault.azure.net/secrets/SendGridApiKey/)"
+    },
+    "toEmail": {
+      "value": "ScrumQA@strasz.com"
+    },
+    "toEmailTech": {
+      "value": "scrumteam@strasz.com"
+    },
+    "maxConcurrency": {
+      "value": 0
+    }
+  }
+}

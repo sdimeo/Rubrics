@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Rubrics.Worker": {
+      "commandName": "Project",
+      "commandLineArgs": "host start --pause-on-error --port 7090"
+    }
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "alwaysOn": {
+      "type": "bool"
+    },
+    "hostingPlanName": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "userAssignedIdentities_id_exams_shared": {
+      "type": "string"
+    },
+    "serverFarmResourceGroup": {
+      "type": "string"
+    },
+    "storageAccountName": {
+      "type": "string"
+    },
+    "subscriptionId": {
+      "type": "string"
+    },
+    "appInsightInstrumentationKey": {
+      "type": "string"
+    },
+    "appInsightConnectionString": {
+      "type": "string"
+    },
+    "azureWebJobsStorage": {
+      "type": "string"
+    },
+    "azureWebJobsServiceBus": {
+      "type": "string"
+    },
+    "environmentName": {
+      "type": "string"
+    },
+    "endpointName": {
+      "type": "string"
+    },
+    "nServicebusLicense": {
+      "type": "string"
+    },
+    "rubricsCertificateBlobContainer": {
+      "type": "string"
+    },
+    "rubricsCertificateFileName": {
+      "type": "string"
+    },
+    "rubricsCertificatePassword": {
+      "type": "string"
+    },
+    "secureAccess": {
+      "type": "bool"
+    },
+    "databaseUrl": {
+      "type": "string"
+    },
+    "databaseName": {
+      "type": "string"
+    },
+    "functionExtensionVersion": {
+      "type": "string"
+    },
+    "functionWorkerRuntime": {
+      "type": "string"
+    },
+    "sendGridApiKey": {
+      "type": "string"
+    },
+    "toEmail": {
+      "type": "string"
+    },
+    "toEmailTech": {
+      "type": "string"
+    },
+    "maxConcurrency": {
+      "type": "int"
+    }
+  },
+  "resources": [
+    {
+      "apiVersion": "2018-11-01",
+      "name": "[parameters('name')]",
+      "type": "Microsoft.Web/sites",
+      "kind": "functionapp",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[parameters('userAssignedIdentities_id_exams_shared')]": {}
+        }
+      },
+      "location": "[parameters('location')]",
+      "tags": {},
+      "dependsOn": [],
+      "properties": {
+        "name": "[parameters('name')]",
+        "keyVaultReferenceIdentity": "[parameters('userAssignedIdentities_id_exams_shared')]",
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "FUNCTIONS_EXTENSION_VERSION",
+              "value": "[parameters('functionExtensionVersion')]"
+            },
+            {
+              "name": "FUNCTIONS_WORKER_RUNTIME",
+              "value": "[parameters('functionWorkerRuntime')]"
+            },
+            {
+              "name": "NServicebusLicense",
+              "value": "[parameters('nServicebusLicense')]"
+            },
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[parameters('appInsightInstrumentationKey')]"
+            },
+            {
+              "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+              "value": "[parameters('appInsightConnectionString')]"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "value": "[parameters('azureWebJobsStorage')]"
+            },
+            {
+              "name": "AzureWebJobsServiceBus",
+              "value": "[parameters('azureWebJobsServiceBus')]"
+            },
+            {
+              "name": "EnvironmentName",
+              "value": "[parameters('environmentName')]"
+            },
+            {
+              "name": "ENDPOINT_NAME",
+              "value": "[parameters('endpointName')]"
+            },
+            {
+              "name": "RubricsCertificateBlobContainer",
+              "value": "[parameters('rubricsCertificateBlobContainer')]"
+            },
+            {
+              "name": "RubricsCertificateFileName",
+              "value": "[parameters('rubricsCertificateFileName')]"
+            },
+            {
+              "name": "RubricsCertificatePassword",
+              "value": "[parameters('rubricsCertificatePassword')]"
+            },
+            {
+              "name": "SecureAccess",
+              "value": "[parameters('secureAccess')]"
+            },
+            {
+              "name": "DatabaseUrl",
+              "value": "[parameters('databaseUrl')]"
+            },
+            {
+              "name": "DatabaseName",
+              "value": "[parameters('databaseName')]"
+            },
+            {
+              "name": "SendGridApiKey",
+              "value": "[parameters('sendGridApiKey')]"
+            },
+            {
+              "name": "ToEmail",
+              "value": "[parameters('toEmail')]"
+            },
+            {
+              "name": "ToEmailTech",
+              "value": "[parameters('toEmailTech')]"
+            },
+            {
+              "name": "MaxConcurrency",
+              "value": "[parameters('maxConcurrency')]"
+            }
+          ],
+          "use32BitWorkerProcess": false,
+          "ftpsState": "FtpsOnly",
+          "http20Enabled": false,
+          "netFrameworkVersion": "V6.0",
+          "alwaysOn": "[parameters('alwaysOn')]"
+        },
+        "httpsOnly": true,
+        "serverFarmId": "[concat('/subscriptions/', parameters('subscriptionId'),'/resourcegroups/', parameters('serverFarmResourceGroup'), '/providers/Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]",
+        "clientAffinityEnabled": false
+      }
+    }
+  ]
+}

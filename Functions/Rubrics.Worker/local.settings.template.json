@@ -1,0 +1,23 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsServiceBus": "Endpoint=sb://sb-exams-shared-local.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=M+v182UPWzUA2BxfgASFzehRsHSlx46/PTbGd66FFdc=",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "DatabaseName": "Rubrics",
+    "DatabaseUrl": "https://rdb.examsdev.aicpa.org",
+    "ENDPOINT_NAME": "<EmployeeName>-rubrics-worker-core",
+    "EnvironmentName": "<EmployeeName>",
+    "RubricsCertificateBlobContainer": "ravencertificates",
+    "RubricsCertificateFileName": "RubricsCertificate.pfx",
+    "RubricsCertificatePassword": "Password123",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet",
+    "NServicebusLicense": "<?xml version=\"1.0\" encoding=\"utf-8\"?><license type=\"Commercial\" DeploymentType=\"Royalty-Free\" Quantity=\"9\" Edition=\"Enterprise\" Applications=\"All\" RenewalType=\"Perpetual\" UpgradeProtectionExpiration=\"2023-05-03\" expiration=\"2122-04-18\" id=\"69ef6305-dc3f-4e22-b373-fc6bf861e179\"><name>Association of International CPAs</name><Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315\" /><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\" /><Reference URI=\"\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\" /></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\" /><DigestValue>6vUfv2AHNAaGyLwEwxy2Y0oA7qA=</DigestValue></Reference></SignedInfo><SignatureValue>uFo8yIP5ZyXTDINXCLurWjTAN+1/0CMX1mEEXpiTefwkgoZDqsiqK7oqO63SQ6OJkwb35rFTt2Z5siZmVwUDuaumKp2UyS9w/RyeHyGjih6RrVQvJ/CrLRCqsm4s/ZqWnAgeSLEyaTrlef5grb84OdJuszF2GiEVwsn7eNfMvAk=</SignatureValue></Signature></license>",
+    // Find your AppInsights instrumention key here
+    // https://docs.google.com/spreadsheets/d/1XL_iG11MtKBLABnGxed1pCI9yChIWcFOUSq_yHm7m0w/edit#gid=525721357
+    "APPINSIGHTS_INSTRUMENTATIONKEY": "<Use Employee specific key>",
+    "sendGridApiKey": "<apiKey>",
+    "toEmail": "<toEmail>",
+    "toEmailTech": "<toEmailTech>",
+    "MaxConcurrency": 0
+  }
+}

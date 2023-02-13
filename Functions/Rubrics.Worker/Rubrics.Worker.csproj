@@ -1,0 +1,81 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<AzureFunctionsVersion>v4</AzureFunctionsVersion>
+		<OutputType>Library</OutputType>
+		<Configurations>Debug;Release;Debug_Init</Configurations>
+    <LangVersion>default</LangVersion>
+    <_FunctionsSkipCleanOutput>true</_FunctionsSkipCleanOutput>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="ITOps.BlobStorage" Version="1.0.7324.2000" />
+		<PackageReference Include="ItOps.NServicebusWithRavenDb" Version="2.2.7509.1000" />
+		<PackageReference Include="ITOps.SendEmail" Version="1.1.7.73713" />
+		<PackageReference Include="Microsoft.ApplicationInsights" Version="2.21.0" />
+		<PackageReference Include="Microsoft.NET.Sdk.Functions" Version="4.1.3" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+		<PackageReference Include="PostSharp" Version="6.10.14" />
+		<PackageReference Include="Rubrics.Handlers.Assertions" Version="12.0.7522.7000" />
+		<PackageReference Include="Rubrics.Handlers.ForwardEvents" Version="12.0.7522.7000" />
+		<PackageReference Include="Rubrics.Handlers.Items" Version="12.0.7522.7000" />
+		<PackageReference Include="Rubrics.Handlers.Keys" Version="12.0.7522.7000" />
+		<PackageReference Include="Rubrics.Handlers.MOs" Version="12.0.7522.7000" />
+		<PackageReference Include="Rubrics.Handlers.MOSequences" Version="12.0.7522.7000" />
+		<PackageReference Include="Rubrics.Handlers.RubricReviewForwardEvents" Version="12.0.7522.7000" />
+		<PackageReference Include="Rubrics.Handlers.RubricReviews" Version="12.0.7522.7000" />
+		<PackageReference Include="Rubrics.Handlers.ScoreSpecs" Version="12.0.7522.7000" />
+		<PackageReference Include="Rubrics.Handlers.ScoreSpecs.Contracts" Version="12.0.7522.7000" />
+		<PackageReference Include="Rubrics.Handlers.TestCases" Version="12.0.7522.7000" />
+		<PackageReference Include="Rubrics.Infrastructure.Evaluators" Version="12.0.7522.7000" />
+		<PackageReference Include="Rubrics.Infrastructure.Persistence.RavenDB" Version="12.0.7522.7000" />
+		<PackageReference Include="Rubrics.Infrastructure.RubricXmlMapping" Version="12.0.7522.7000" />
+		<PackageReference Include="Rubrics.Infrastructure.RubricXmlTransformation" Version="12.0.7522.7000" />
+		<PackageReference Include="Rubrics.Infrastructure.ScoreIdMapping" Version="12.0.7522.7000" />
+		<PackageReference Include="Rubrics.Infrastructure.Translator.ItemImport" Version="12.0.7522.7000" />
+		<PackageReference Include="Rubrics.ProcessManagers.ItemImport" Version="12.0.7522.7000" />
+    <PackageReference Include="System.Net.NameResolution" Version="4.3.0" />
+    <PackageReference Include="System.Text.Json" Version="6.0.7" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Update="Deployment\rubrics-worker-Dev-resource-parameters.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Deployment\rubrics-worker-QA-resource-parameters.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Deployment\rubrics-worker-resource-template.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Deployment\rubrics-worker-SMO-resource-parameters.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Deployment\rubrics-worker-PRD-resource-parameters.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Deployment\rubrics-worker-STG-resource-parameters.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Deployment\rubrics-worker-NAPQA-resource-parameters.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Deployment\rubrics-worker-UAT-resource-parameters.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="host.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="local.settings.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Never</CopyToPublishDirectory>
+		</None>
+		<None Update="SetEnvironment.local.bat">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="SetEnvironment.template.bat">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="$(ConfigurationName) == Debug_Init">
+    <Exec Command="call .\Deployment\Topology\local.bat" />
+  </Target>
+</Project>

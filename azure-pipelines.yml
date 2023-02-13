@@ -1,0 +1,355 @@
+trigger:
+- master
+
+pool: default
+
+variables:
+  BuildProjects: '**/*.csproj'
+  TestProject: |
+     **/*[Tt]ests/*.csproj
+     **/*[Ss]pec/*.csproj
+  BuildConfiguration: 'Release'
+  isMain: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
+  VstsFeed: 'a2ed2a76-70aa-4ead-abe1-dca2ddba0168'
+  Parameters.ConnectedServiceName: 'DevTestSubscription'
+  Parameters.ServiceConnectionDev: 'sc-exams-shared-dev'
+  Parameters.ServiceConnectionTest: 'sc-exams-shared-test'
+  Parameters.RubricsWorkerFunctionArtifactName: "RubricsWorkerFunction"
+
+stages:
+- stage: CI
+  jobs:
+      - job: CheckforDirectoryBuildpropsAndPostSharpConfigExists  
+        steps:
+          - task: PowerShell@1
+            displayName: 'check file exists'
+            inputs:
+              scriptType: 'inlineScript'
+              inlineScript: |
+                $directoryProps = Get-ChildItem -Path "$(build.sourcesDirectory)" -Filter Directory.Build.props -Recurse
+                $postSharpConfig = Get-ChildItem -Path "$(build.sourcesDirectory)" -Filter postsharp.config -Recurse
+
+                if($directoryProps.length -eq 0  -Or $postSharpConfig.length -eq 0){
+                  exit 1
+                }
+            
+      - job: ReadVersionPrefix
+        dependsOn: CheckforDirectoryBuildpropsAndPostSharpConfigExists
+        steps:
+          - task: PowerShell@1
+            displayName: 'Set Version Prefix from file'
+            inputs:
+              scriptType: 'inlineScript'
+              arguments: 'Read VersionPrefix'
+              inlineScript: |
+                $versionPrefixFile = Get-ChildItem -Path "$(build.sourcesDirectory)" -Filter version-prefix.txt -Recurse
+                $versionPrefixInPowerShell = [IO.File]::ReadAllText($versionPrefixFile.FullName)
+                Write-Host "##vso[task.setvariable variable=VersionPrefix]$versionPrefixInPowerShell"
+                
+                Write-Host "VersionPrefixInPowerShell"
+                Write-Host "$versionPrefixInPowerShell"
+                Write-Host "VersionPrefix"
+                Write-Host "Cannot print VersionPrefix here - will be available after this task"
+            
+          - task: PowerShell@1
+            displayName: 'Update Build Number'
+            inputs:
+              scriptType: 'inlineScript'
+              inlineScript: |
+                $vpArray="$(VersionPrefix)".split(".")
+                
+                if ($vpArray.Count -gt 3)
+                {
+                  # If version prefix has 4 digits (major.minor.patch.revision) then use it
+                  Write-Host "##vso[build.updatebuildnumber]$(VersionPrefix)"
+                }
+                else
+                {
+                  # Use the major and minor versions from the version prefix file.
+                  # Calculate the patch and revision by creating an 8-digit number
+                  # (ex. 12345678) out of the BuildId and slice it into two 4-digit
+                  # numbers for the patch (ex. 1234) and revision (ex. 5678)
+                  $major=$vpArray[0]
+                  $minor=$vpArray[1]
+              
+                  $BuildIdInt=[int]$(Build.BuildId)
+                  Switch(([string]$BuildIdInt).length)
+                  {
+                    1 {$BuildIdInt=$BuildIdInt * 10000000}
+                    2 {$BuildIdInt=$BuildIdInt * 1000000}
+                    3 {$BuildIdInt=$BuildIdInt * 100000}
+                    4 {$BuildIdInt=$BuildIdInt * 10000}
+                    5 {$BuildIdInt=$BuildIdInt * 1000}
+                    6 {$BuildIdInt=$BuildIdInt * 100}
+                    7 {$BuildIdInt=$BuildIdInt * 10}
+                  }
+              
+                  Write-Host "BuildIdInt"
+                  Write-Host "$BuildIdInt"
+              
+                  $patch=([string]$BuildIdInt).substring(0,4)
+                  $revision=([string]$BuildIdInt).substring(4,4)
+              
+                  Write-Host "Major"
+                  Write-Host "$major"
+                  Write-Host "Minor"
+                  Write-Host "$minor"
+                  Write-Host "Patch"
+                  Write-Host "$patch"
+                  Write-Host "Revision"
+                  Write-Host "$revision"
+              
+                  Write-Host "##vso[build.updatebuildnumber]$major.$minor.$patch.$revision"
+                }
+                Write-Host "VersionPrefix"
+                Write-Host "$(VersionPrefix)"
+                Write-Host "BuildSourceBranch"
+                Write-Host "$(Build.SourceBranch)"
+                Write-Host "Build.BuildNumber will be updated post this step"
+                Write-Host "$(Build.BuildNumber)"
+                  
+          - task: PowerShell@1
+            displayName: 'Print BuildNumber'
+            inputs:
+              scriptType: 'inlineScript'
+              inlineScript: |
+                Write-Host "Build.BuildNumber"
+                Write-Host "$(Build.BuildNumber)"
+              
+      - job: CreateNugetPackage
+        dependsOn: ReadVersionPrefix
+        steps:
+        - task: DotNetCoreCLI@2
+          displayName: Restore
+          inputs:
+            command: 'restore'
+            projects: '$(BuildProjects)'
+            restoreArguments: '--no-dependencies'
+            feedsToUse: 'select'
+            vstsFeed: '$(VstsFeed)'
+        
+        - task: DotNetCoreCLI@2
+          displayName: Build
+          inputs:
+            command: 'build'
+            projects: '$(BuildProjects)'
+            arguments: >-
+              /p:PackageVersion="$(Build.BuildNumber)" 
+              /p:InformationalVersion="$(Build.BuildNumber)" 
+              /p:AssemblyVersion="$(Build.BuildNumber)"
+              --configuration $(BuildConfiguration) 
+              --no-restore
+            
+        - task: DotNetCoreCLI@2
+          enabled: true
+          displayName: Test
+          inputs:
+            command: 'test'
+            projects: '$(TestProject)'
+            arguments: '--configuration $(BuildConfiguration) --no-restore /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=$(Build.SourcesDirectory)/TestResults/Coverage/'
+            publishTestResults: true
+        
+        - task: PublishCodeCoverageResults@1
+          displayName: 'Publish code coverage report'
+          inputs:
+            codeCoverageTool: 'Cobertura'
+            summaryFileLocation: '$(Build.SourcesDirectory)/**/coverage.cobertura.xml'
+        
+        - task: DotNetCoreCLI@2
+          displayName: Pack
+          condition: and(succeeded(), eq(variables.isMain, true))
+          inputs:
+            command: 'pack'
+            packagesToPack: '$(BuildProjects);!**/*[Tt]ests/*.csproj;!**/*[Ss]pec/*.csproj;!**/*Functions/*.csproj'
+            packDirectory: '$(Build.ArtifactStagingDirectory)/Packages'
+            nobuild: true
+            versioningScheme: 'byBuildNumber'
+        - task: PublishSymbols@2
+          displayName: 'Publish Symbols'
+          condition: and(succeeded(), eq(variables.isMain, true))
+          inputs:
+              SearchPattern: '**/bin/**/*.pdb'
+              SymbolServerType: 'FileShare'
+              SymbolsPath: '\\aicpa-tfs\Symbols'
+              CompressSymbols: true
+              TreatNotIndexedAsWarning: true
+      
+      - job: 'BuildPublishRubricsWorkerFunction'
+        dependsOn: CreateNugetPackage
+        steps:
+        - task: DotNetCoreCLI@2
+          displayName: Build
+          inputs:
+            command: 'build'
+            projects: '**/Rubrics.Worker.csproj'
+            arguments: --output $(System.DefaultWorkingDirectory)/publish_output --configuration $(BuildConfiguration)
+        
+        - task: ArchiveFiles@2
+          inputs:
+            rootFolderOrFile: '$(System.DefaultWorkingDirectory)/publish_output'
+            includeRootFolder: false
+            archiveType: 'zip'
+            archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+            replaceExistingArchive: true
+          
+        - task: PublishBuildArtifacts@1
+          displayName: 'Publish Build Artifact'
+          inputs:
+            PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+            artifactName: $(Parameters.RubricsWorkerFunctionArtifactName)
+        
+- stage: Dev
+  variables:  
+  - group: kv-exams-shared-dev
+  - group: common-exams-shared-dev
+  - name: 'Parameters.FunctionAppNameRubricsWorker'
+    value: 'func-exams-rubrics-worker-dev'
+  condition: and(always(), eq(variables.isMain, true))
+  
+  jobs:
+    - job: ASBTopologyCreation
+      steps:
+        - task: BatchScript@1
+          inputs:
+            filename: '$(System.DefaultWorkingDirectory)/Functions/Rubrics.Worker/Deployment/Topology/ASBTopologyCreation.bat'
+            arguments: '$(EnvironmentName) "$(AzureWebJobsServiceBus)" $(QueueSizeInGB)'
+        
+    - job: FunctionAppCreation
+      dependsOn: ASBTopologyCreation
+      steps:
+        - task: AzureResourceManagerTemplateDeployment@3      
+          inputs:
+            deploymentScope: 'Resource Group'        
+            azureResourceManagerConnection: '$(Parameters.ServiceConnectionDev)'
+            subscriptionId: '0d4d3dc6-887c-40a3-b124-23319295acbf'
+            action: 'Create Or Update Resource Group'
+            resourceGroupName: 'rg-exams-corecms-dev'
+            location: 'East US 2'
+            templateLocation: 'Linked artifact'
+            csmFile: '$(System.DefaultWorkingDirectory)/**/rubrics-worker-resource-template.json'
+            csmParametersFile: '$(System.DefaultWorkingDirectory)/**/rubrics-worker-Dev-resource-parameters.json'
+            deploymentMode: 'Incremental'
+            deploymentName: 'RubricsWorkerFunctionAppCreationwithARM'   
+        
+    - job: DeployRubricsWorkerFunctionApp
+      dependsOn: FunctionAppCreation
+      steps:
+        - task: DownloadBuildArtifacts@0
+          displayName: 'Download Build Artifact'
+          inputs:
+            buildType: 'current'
+            downloadType: 'single'
+            artifactName: $(Parameters.RubricsWorkerFunctionArtifactName)
+            downloadPath: '$(System.ArtifactsDirectory)'    
+        - task: AzureFunctionApp@1
+          displayName: 'Azure functions app deploy'
+          inputs:
+            azureSubscription: '$(Parameters.ServiceConnectionDev)'
+            appType: functionApp
+            appName: '$(Parameters.FunctionAppNameRubricsWorker)'
+            package: '$(System.ArtifactsDirectory)/**/*.zip'
+            deploymentMethod: 'zipDeploy'
+    
+- stage: QA
+  variables:
+  - group: kv-exams-shared-qa
+  - group: common-exams-shared-qa
+  - name: 'Parameters.FunctionAppNameRubricsWorker'
+    value: 'func-exams-rubrics-worker-qa'
+  condition: and(always(), eq(variables.isMain, true))
+  
+  jobs:
+    - job: ASBTopologyCreation
+      steps:
+        - task: BatchScript@1
+          inputs:
+            filename: '$(System.DefaultWorkingDirectory)/Functions/Rubrics.Worker/Deployment/Topology/ASBTopologyCreation.bat'
+            arguments: '$(EnvironmentName) "$(AzureWebJobsServiceBus)" $(QueueSizeInGB)'
+        
+    - job: FunctionAppCreation
+      dependsOn: ASBTopologyCreation
+      steps:
+        - task: AzureResourceManagerTemplateDeployment@3      
+          inputs:
+            deploymentScope: 'Resource Group'        
+            azureResourceManagerConnection: '$(Parameters.ServiceConnectionTest)'
+            subscriptionId: '0d4d3dc6-887c-40a3-b124-23319295acbf'
+            action: 'Create Or Update Resource Group'
+            resourceGroupName: 'rg-exams-corecms-test'
+            location: 'East US 2'
+            templateLocation: 'Linked artifact'
+            csmFile: '$(System.DefaultWorkingDirectory)/**/rubrics-worker-resource-template.json'
+            csmParametersFile: '$(System.DefaultWorkingDirectory)/**/rubrics-worker-QA-resource-parameters.json'
+            deploymentMode: 'Incremental'
+            deploymentName: 'RubricsWorkerFunctionAppCreationwithARM'   
+      
+    - job: DeployRubricsWorkerFunctionApp
+      dependsOn: FunctionAppCreation
+      steps:
+        - task: DownloadBuildArtifacts@0
+          displayName: 'Download Build Artifact'
+          inputs:
+            buildType: 'current'
+            downloadType: 'single'
+            artifactName: $(Parameters.RubricsWorkerFunctionArtifactName)
+            downloadPath: '$(System.ArtifactsDirectory)'    
+        - task: AzureFunctionApp@1
+          displayName: 'Azure functions app deploy'
+          inputs:
+            azureSubscription: '$(Parameters.ServiceConnectionTest)'
+            appType: functionApp
+            appName: '$(Parameters.FunctionAppNameRubricsWorker)'
+            package: '$(System.ArtifactsDirectory)/**/*.zip'
+            deploymentMethod: 'zipDeploy'
+    
+- stage: UAT
+  variables: 
+  - group: kv-exams-shared-uat
+  - group: common-exams-shared-uat
+  - name: 'Parameters.FunctionAppNameRubricsWorker'
+    value: 'func-exams-rubrics-worker-uat'
+  condition: and(always(), eq(variables.isMain, true))
+  
+  jobs:
+    - job: ASBTopologyCreation
+      steps:
+      - task: BatchScript@1
+        inputs:
+          filename: '$(System.DefaultWorkingDirectory)/Functions/Rubrics.Worker/Deployment/Topology/ASBTopologyCreation.bat'
+          arguments: '$(EnvironmentName) "$(AzureWebJobsServiceBus)" $(QueueSizeInGB)'
+      
+    - job: FunctionAppCreation
+      dependsOn: ASBTopologyCreation
+      steps:
+        - task: AzureResourceManagerTemplateDeployment@3      
+          inputs:
+            deploymentScope: 'Resource Group'        
+            azureResourceManagerConnection: '$(Parameters.ServiceConnectionTest)'
+            subscriptionId: '0d4d3dc6-887c-40a3-b124-23319295acbf'
+            action: 'Create Or Update Resource Group'
+            resourceGroupName: 'rg-exams-corecms-test'
+            location: 'East US 2'
+            templateLocation: 'Linked artifact'
+            csmFile: '$(System.DefaultWorkingDirectory)/**/rubrics-worker-resource-template.json'
+            csmParametersFile: '$(System.DefaultWorkingDirectory)/**/rubrics-worker-UAT-resource-parameters.json'
+            deploymentMode: 'Incremental'
+            deploymentName: 'RubricsWorkerFunctionAppCreationwithARM'   
+      
+    - job: DeployRubricsWorkerFunctionApp
+      dependsOn: FunctionAppCreation
+      steps:
+        - task: DownloadBuildArtifacts@0
+          displayName: 'Download Build Artifact'
+          inputs:
+            buildType: 'current'
+            downloadType: 'single'
+            artifactName: $(Parameters.RubricsWorkerFunctionArtifactName)
+            downloadPath: '$(System.ArtifactsDirectory)'    
+        - task: AzureFunctionApp@1
+          displayName: 'Azure functions app deploy'
+          inputs:
+            azureSubscription: '$(Parameters.ServiceConnectionTest)'
+            appType: functionApp
+            appName: '$(Parameters.FunctionAppNameRubricsWorker)'
+            package: '$(System.ArtifactsDirectory)/**/*.zip'
+            deploymentMethod: 'zipDeploy'
